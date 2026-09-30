@@ -369,6 +369,7 @@ Media Prima Berhad
             onAddAdmin={handleAddAdmin}
             onDeleteAdmin={handleDeleteAdmin}
             onSwitchAdmin={(newAdm) => setAdminUser(newAdm)}
+            onNavigateToCrewRegister={() => setCurrentTab('crew-staff')}
           />
         )}
 
