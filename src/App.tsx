@@ -115,6 +115,17 @@ export default function App() {
     await saveApplicationToFirestore(newApp);
   };
 
+  // Handle multiple applications in a single submission batch (Staff & Crew batch up to 6)
+  const handleMultipleApplications = async (newApps: VendorApplication[]) => {
+    setApplications((prev) => [
+      ...newApps,
+      ...prev.filter((a) => !newApps.some((na) => na.id === a.id)),
+    ]);
+    for (const app of newApps) {
+      await saveApplicationToFirestore(app);
+    }
+  };
+
   // Handle Admin status changes (Approve / Reject) with automated email generation & Firestore sync
   const handleUpdateStatus = async (
     applicationId: string,
@@ -178,7 +189,7 @@ Event & Allocation Summary:
 • Bazar Cycle: ${targetApp.preferredMonth}
 • Venue: Balai Berita, Anjung Riong, 31, Jalan Riong, Bangsar, 59100 Kuala Lumpur, Malaysia
 • Operating Hours: 10.00 am - 3.00 pm
-• Standard Logistics: 1 Table (3' x 3') with ${targetApp.chairQuantity}
+• Standard Logistics: 1 Table (3' x 3')${targetApp.chairQuantity && targetApp.chairQuantity !== 'Not Required' ? ` with ${targetApp.chairQuantity}` : ' (Staff / Crew Table Allocation)'}
 • Approved By: ${reviewerName}
 
 Mandatory Event Day Instructions:
@@ -256,6 +267,14 @@ Media Prima Berhad
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
+    setAdmins((prev) =>
+      prev.filter(
+        (a) =>
+          a.id !== adminId &&
+          a.email.toLowerCase() !== adminId.toLowerCase() &&
+          a.id !== `admin-${adminId.replace(/[@.]/g, '_')}`
+      )
+    );
     await deleteAdminFromFirestore(adminId);
   };
 
@@ -321,6 +340,7 @@ Media Prima Berhad
         {currentTab === 'crew-staff' && (
           <CrewStaffRegistration
             onSubmitSuccess={handleNewApplication}
+            onSubmitMultipleSuccess={handleMultipleApplications}
             onNavigateToDashboard={() => {
               if (!adminUser) {
                 setCurrentTab('admin-login');

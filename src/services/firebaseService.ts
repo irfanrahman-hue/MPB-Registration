@@ -333,19 +333,26 @@ export async function saveAdminToFirestore(admin: AdminUser): Promise<void> {
 
 // Delete or revoke admin from Firestore
 export async function deleteAdminFromFirestore(adminId: string): Promise<void> {
-  try {
-    const docRef = doc(db, ADMINS_COLLECTION, adminId);
-    await deleteDoc(docRef);
-  } catch (err) {
-    console.warn('Could not delete admin from Firestore:', err);
+  const possibleDocIds = [
+    adminId,
+    `admin-${adminId.replace(/[@.]/g, '_')}`,
+  ];
+
+  for (const docId of possibleDocIds) {
     try {
-      handleFirestoreError(err, OperationType.DELETE, `${ADMINS_COLLECTION}/${adminId}`);
-    } catch {
-      // Suppress after logging
+      const docRef = doc(db, ADMINS_COLLECTION, docId);
+      await deleteDoc(docRef);
+    } catch (err) {
+      console.warn(`Could not delete admin doc ${docId} from Firestore:`, err);
     }
-  } finally {
-    const current = getStoredAdmins();
-    const filtered = current.filter((a) => a.id !== adminId);
-    saveStoredAdmins(filtered);
   }
+
+  const current = getStoredAdmins();
+  const filtered = current.filter(
+    (a) =>
+      a.id !== adminId &&
+      !possibleDocIds.includes(a.id || '') &&
+      a.email.toLowerCase() !== adminId.toLowerCase()
+  );
+  saveStoredAdmins(filtered);
 }

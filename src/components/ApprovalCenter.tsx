@@ -29,6 +29,7 @@ import {
   Trash2,
   UserCheck,
   Check,
+  Lock,
 } from 'lucide-react';
 import { AdminUser } from '../types';
 
@@ -75,6 +76,21 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
   const [rejectionModalApp, setRejectionModalApp] = useState<VendorApplication | null>(null);
   const [rejectionReason, setRejectionReason] = useState('Category capacity exceeded for current carnival cycle.');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [adminToDelete, setAdminToDelete] = useState<AdminUser | null>(null);
+  const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
+
+  // Check if active user has Super Admin authority
+  const isSuperAdmin = useMemo(() => {
+    if (!adminUser) return false;
+    const cleanRole = (adminUser.role || '').toLowerCase();
+    const cleanEmail = (adminUser.email || '').toLowerCase();
+    return (
+      cleanRole === 'super admin' ||
+      cleanRole.includes('super') ||
+      cleanEmail === 'mirfan6874@gmail.com' ||
+      cleanEmail === 'farah.yasmin@mediaprima.com.my'
+    );
+  }, [adminUser]);
 
   // Compute metrics
   const stats = useMemo(() => {
@@ -191,6 +207,23 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
     setTimeout(() => setActionNotice(null), 4000);
     if (selectedApp?.id === app.id) {
       setSelectedApp({ ...app, status: 'Pending' });
+    }
+  };
+
+  const handleConfirmDeleteAdmin = async () => {
+    if (!adminToDelete || !onDeleteAdmin) return;
+    setIsDeletingAdmin(true);
+    setAdminFormError(null);
+    setAdminFormSuccess(null);
+    try {
+      const targetId = adminToDelete.id || adminToDelete.email;
+      await onDeleteAdmin(targetId);
+      setAdminFormSuccess(`Akses admin untuk "${adminToDelete.name}" (${adminToDelete.email}) telah berjaya dipadam daripada Firebase.`);
+      setAdminToDelete(null);
+    } catch {
+      setAdminFormError('Gagal memadam rekod admin daripada Firebase. Sila cuba lagi.');
+    } finally {
+      setIsDeletingAdmin(false);
     }
   };
 
@@ -662,7 +695,11 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
 
                     {/* Logistics */}
                     <td className="py-3 px-4 text-[#64748b] whitespace-nowrap">
-                      <span>1 Table · {app.chairQuantity.split(' ')[0]} Chairs</span>
+                      {app.chairQuantity === 'Not Required' ? (
+                        <span className="text-xs text-slate-500">1 Table (Staf / Kru)</span>
+                      ) : (
+                        <span>1 Table · {app.chairQuantity.includes('Chairs') ? app.chairQuantity : `${app.chairQuantity} Chairs`}</span>
+                      )}
                     </td>
 
                     {/* Status Badge */}
@@ -808,10 +845,20 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
                     <span className="text-[#64748b]">Table Allocation:</span>
                     <span className="font-semibold text-[#0f172a]">1 Standard Unit (3' x 3')</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#64748b]">Chairs:</span>
-                    <span className="font-semibold text-[#0f172a]">{selectedApp.chairQuantity}</span>
-                  </div>
+                  {selectedApp.chairQuantity && selectedApp.chairQuantity !== 'Not Required' && (
+                    <div className="flex justify-between">
+                      <span className="text-[#64748b]">Chairs:</span>
+                      <span className="font-semibold text-[#0f172a]">{selectedApp.chairQuantity}</span>
+                    </div>
+                  )}
+                  {selectedApp.totalCrewInBatch && selectedApp.totalCrewInBatch > 1 && (
+                    <div className="flex justify-between items-center pt-1 border-t border-[#f1f5f9]">
+                      <span className="text-[#64748b]">Pendaftaran Kru:</span>
+                      <span className="font-semibold text-[#1e40af] bg-[#eff6ff] border border-[#bfdbfe] px-2 py-0.5 rounded text-[11px]">
+                        Kru #{selectedApp.crewIndex} drpd {selectedApp.totalCrewInBatch} (Batch Bersama)
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -985,16 +1032,32 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
 
             {/* List of Current Admins */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0f172a] uppercase tracking-wider">
-                  Pegawai Didaftarkan ({admins.length})
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0f172a] uppercase tracking-wider">
+                    Pegawai Didaftarkan ({admins.length})
+                  </span>
+                  {isSuperAdmin ? (
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center gap-1">
+                      <Shield className="w-3 h-3 text-emerald-600" />
+                      Kuasa Super Admin: Boleh Padam Pegawai
+                    </span>
+                  ) : (
+                    <span
+                      className="text-[10px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-semibold border border-slate-200 flex items-center gap-1"
+                      title="Hanya Super Admin dibenarkan memadam pegawai"
+                    >
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      Hanya Super Admin Boleh Padam Pegawai
+                    </span>
+                  )}
+                </div>
                 <span className="text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-semibold border border-emerald-200">
                   Firebase Sync Active
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
                 {admins.map((adm) => {
                   const isCurrent = adminUser?.email.toLowerCase() === adm.email.toLowerCase();
                   return (
@@ -1029,6 +1092,11 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
                               Sesi Anda
                             </span>
                           )}
+                          {adm.role === 'Super Admin' && !isCurrent && (
+                            <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 border border-amber-200 rounded text-[9px] font-bold">
+                              Super Admin
+                            </span>
+                          )}
                         </div>
                         <span className="block text-[11px] text-[#475569] font-medium truncate">
                           {adm.role}
@@ -1037,14 +1105,31 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
                           {adm.email}
                         </span>
 
-                        {!isCurrent && onSwitchAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => onSwitchAdmin(adm)}
-                            className="mt-1.5 text-[10.5px] font-bold text-[#d61b22] hover:text-[#b9141a] hover:underline cursor-pointer"
-                          >
-                            Tukar ke Sesi Ini →
-                          </button>
+                        {!isCurrent && (
+                          <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 flex-wrap">
+                            {onSwitchAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => onSwitchAdmin(adm)}
+                                className="text-[10.5px] font-bold text-[#d61b22] hover:text-[#b9141a] hover:underline cursor-pointer"
+                              >
+                                Tukar ke Sesi Ini →
+                              </button>
+                            )}
+
+                            {/* Delete button: ONLY FOR SUPER ADMIN */}
+                            {isSuperAdmin && onDeleteAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => setAdminToDelete(adm)}
+                                className="inline-flex items-center gap-1 text-[10.5px] font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-0.5 rounded border border-rose-200 transition-colors ml-auto cursor-pointer"
+                                title="Padam admin ini daripada Firebase (Akses Super Admin)"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                <span>Padam</span>
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1190,6 +1275,69 @@ export const ApprovalCenter: React.FC<ApprovalCenterProps> = ({
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal to Delete Admin (Super Admin only) */}
+      {adminToDelete && (
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 font-display">
+                  Padam Akses Admin
+                </h3>
+                <span className="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">
+                  Tindakan Eksklusif Super Admin
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Adakah anda pasti ingin membuang pegawai ini daripada sistem dan pangkalan data Firebase Firestore? Pegawai ini tidak lagi boleh mengakses sesi semakan dashboard.
+            </p>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+              <div className="text-xs font-bold text-slate-900">
+                {adminToDelete.name}
+              </div>
+              <div className="text-[11px] text-slate-500 font-mono">
+                {adminToDelete.email}
+              </div>
+              <div className="text-[11px] text-slate-600">
+                Peranan: <span className="font-semibold text-slate-800">{adminToDelete.role}</span> • {adminToDelete.department || 'Media Prima'}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingAdmin}
+                onClick={() => setAdminToDelete(null)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingAdmin}
+                onClick={handleConfirmDeleteAdmin}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingAdmin ? (
+                  <span>Memadam daripada Firebase...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Sahkan Padam Akses</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

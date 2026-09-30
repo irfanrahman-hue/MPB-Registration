@@ -38,6 +38,9 @@ export interface VendorApplication {
   staffId?: string;
   icNumber?: string;
   department?: string;
+  groupBatchId?: string;
+  crewIndex?: number;
+  totalCrewInBatch?: number;
   agreedToPdpa: boolean;
   submittedAt: string;
   status: VendorStatus;
