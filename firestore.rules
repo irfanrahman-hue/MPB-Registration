@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    match /vendor_applications/{applicationId} {
+      allow read: if true;
+      allow create: if isValidId(applicationId)
+        && request.resource.data.applicantName is string
+        && request.resource.data.applicantName.size() > 0
+        && request.resource.data.applicantName.size() <= 200
+        && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() > 0
+        && request.resource.data.businessName.size() <= 200
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 150
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 50;
+      allow update, delete: if true;
+    }
+
+    match /outbox_emails/{emailId} {
+      allow read: if true;
+      allow write: if isValidId(emailId);
+    }
+
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if isValidId(adminId);
+    }
+  }
+}

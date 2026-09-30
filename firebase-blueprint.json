@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "VendorApplication": {
+      "title": "Vendor Application",
+      "description": "Represents a vendor booth registration for Bazar Seloka",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the application"
+        },
+        "referenceCode": {
+          "type": "string",
+          "description": "Human-readable reference code (e.g. MPB-HR-2025-001)"
+        },
+        "applicantName": {
+          "type": "string",
+          "description": "Full legal name of the applicant"
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Brand or registered business name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Applicant contact email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Applicant telephone contact number"
+        },
+        "vendorCategory": {
+          "type": "string",
+          "enum": [
+            "Company - Client",
+            "HR - Vendor",
+            "Kelab Media Prima Berhad",
+            "Fama"
+          ],
+          "description": "Official vendor category"
+        },
+        "preferredMonth": {
+          "type": "string",
+          "description": "Selected bazaar schedule month"
+        },
+        "salesItemType": {
+          "type": "string",
+          "enum": [
+            "Food & Beverages (F&B)",
+            "Apparel & Fashion",
+            "Crafts & Accessories",
+            "Services & Lifestyle",
+            "Others"
+          ],
+          "description": "Primary sales category"
+        },
+        "specifiedItemDescription": {
+          "type": "string",
+          "description": "Detailed description of goods/services offered"
+        },
+        "tableCount": {
+          "type": "number",
+          "description": "Number of tables allocated (standard: 1)"
+        },
+        "chairQuantity": {
+          "type": "string",
+          "description": "Allocated complimentary chairs"
+        },
+        "additionalNotes": {
+          "type": "string",
+          "description": "Special electrical or logistics notes"
+        },
+        "isStaff": {
+          "type": "boolean",
+          "description": "Whether the vendor is Media Prima internal staff/crew"
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Staff ID or NRIC number"
+        },
+        "icNumber": {
+          "type": "string",
+          "description": "National Registration Identity Card (NRIC) number"
+        },
+        "department": {
+          "type": "string",
+          "description": "Internal department if applicable"
+        },
+        "agreedToPdpa": {
+          "type": "boolean",
+          "description": "Agreement to PDPA terms and event rules"
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of application submission"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Approved",
+            "Rejected"
+          ],
+          "description": "Current workflow status of the application"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when status was reviewed"
+        },
+        "reviewedBy": {
+          "type": "string",
+          "description": "Admin identity who reviewed the application"
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "Reason for application rejection if applicable"
+        }
+      },
+      "required": [
+        "id",
+        "referenceCode",
+        "applicantName",
+        "businessName",
+        "email",
+        "phone",
+        "vendorCategory",
+        "preferredMonth",
+        "salesItemType",
+        "tableCount",
+        "chairQuantity",
+        "agreedToPdpa",
+        "submittedAt",
+        "status"
+      ]
+    },
+    "OutboxEmail": {
+      "title": "Outbox Email",
+      "description": "Simulated or delivered transactional email notification",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique email record ID"
+        },
+        "applicationId": {
+          "type": "string",
+          "description": "Associated vendor application ID"
+        },
+        "referenceCode": {
+          "type": "string",
+          "description": "Application reference code"
+        },
+        "recipientEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Destination email address"
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Recipient full name"
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Recipient business name"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Email subject header"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Approval",
+            "Rejection",
+            "Acknowledgment"
+          ],
+          "description": "Category of notice"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Sent timestamp"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Simulated",
+            "Delivered"
+          ],
+          "description": "Delivery status"
+        },
+        "htmlBody": {
+          "type": "string",
+          "description": "Rendered message content"
+        }
+      },
+      "required": [
+        "id",
+        "applicationId",
+        "referenceCode",
+        "recipientEmail",
+        "recipientName",
+        "businessName",
+        "subject",
+        "type",
+        "sentAt",
+        "status",
+        "htmlBody"
+      ]
+    },
+    "AdminUser": {
+      "title": "Admin User",
+      "description": "Authorized Media Prima HR administrator or committee reviewer for Bazar Seloka",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user or admin UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Official email address of the administrator"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the HR officer / committee member"
+        },
+        "role": {
+          "type": "string",
+          "description": "Administrative role (e.g. Super Admin, HR Committee Reviewer, Event Coordinator)"
+        },
+        "department": {
+          "type": "string",
+          "description": "Media Prima Berhad department"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar image URL or photo identifier"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of most recent login"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "department"
+      ]
+    }
+  },
+  "firestore": {
+    "/vendor_applications/{applicationId}": {
+      "schema": "VendorApplication",
+      "description": "Collection of vendor applications submitted for Bazar Seloka"
+    },
+    "/outbox_emails/{emailId}": {
+      "schema": "OutboxEmail",
+      "description": "Transactional confirmation and approval emails sent to vendors"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminUser",
+      "description": "Authorized HR administrators and review committee members"
+    }
+  }
+}
